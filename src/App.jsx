@@ -8,8 +8,8 @@ import Modal from 'components/Modal';
 import React from 'react';
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
+  constructor() {
+    super();
     this.state = {
       results: [],
       isLoading: false,
