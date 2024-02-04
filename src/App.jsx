@@ -5,117 +5,117 @@ import ImageGallery from 'components/ImageGallery';
 import ImageGalleryItem from 'components/ImageGalleryItem';
 import Loader from 'components/Loader';
 import Modal from 'components/Modal';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useToggleModal } from 'react';
 
 const App = () => {
-  
-  const [results, setResults] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedImage, setSelectedImage] = useState(null)
-  const [showLoadMore, setShowLoadMore] = useState(false)
-  const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
-  const [lastSearchQuery, setLastSearchQuery] = useState('')
+  const [results, setResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showLoadMore, setShowLoadMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [lastSearchQuery, setLastSearchQuery] = useState('');
 
   const API_KEY = '41147953-e12c65c5a5e41658f9ab5f6ec';
-  
+
+  const toggleModal = useToggleModal(
+    image => {
+      setSelectedImage(image);
+      setIsModalOpen(!isModalOpen);
+    },
+    [isModalOpen]
+  );
 
   useEffect(() => {
-    const handleKeyDown = e => console.log("keydown event: ", e);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+    const handleKeyDown = event => {
+      if (event.key === 'Escape' && isModalOpen) {
+        toggleModal();
+      }
     };
-  }, []);
-};
+    setShowLoadMore(Math.ceil(total / 12) > 1);
 
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isModalOpen, toggleModal, total]);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      this.state.total !== prevState.total ||
-      this.state.results !== prevState.results
-    ) {
-      this.setState({ showLoadMore: Math.ceil(this.state.total / 12) > 1 });
-    }
-  }
+  useEffect(() => {
+    const fetchData = async query => {
+      try {
+        setIsLoading({ isLoading: true });
+        const response = await axios.get('https://pixabay.com/api/', {
+          params: {
+            q: query,
+            page: page,
+            key: API_KEY,
+            image_type: 'photo',
+            orientation: 'horizontal',
+            per_page: 12,
+          },
+        });
+        setIsLoading(isLoading);
+        setResults({ results: [...response.data.hits, ...results] });
+        setTotal({
+          total: Math.ceil(
+            response.data.totalHits / response.config.params.per_page
+          ),
+        });
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    fetchData();
+  }, [isLoading, page, results]);
 
-  handleKeyDown = event => {
-    if (event.key === 'Escape' && isModalOpen) {
-      toggleModal();
-    }
-  };
-
-  fetchData = async query => {
+  const handleSubmit = async query => {
     try {
-      this.setState({ isLoading: true });
-      const res = await axios.get('https://pixabay.com/api/', {
-        params: {
-          q: query,
-          page: this.state.page,
-          key: this.API_KEY,
-          image_type: 'photo',
-          orientation: 'horizontal',
-          per_page: 12,
-        },
-      });
-      this.setState({
-        isLoading: false,
-        results: [...res.data.hits, ...this.state.results],
-        total: Math.ceil(res.data.totalHits / res.config.params.per_page),
-      });
+      const data = await fetchData(query);
+      setLastSearchQuery({ lastSearchQuery: query, results: data });
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
 
-  const handleSubmit = async query => {
-    this.setState({ lastSearchQuery: query, results: [] });
-    await this.fetchData(query);
-  };
-
-  const toggleModal = image => {
-    this.setState({
-      selectedImage: image,
-      isModalOpen: !this.state.isModalOpen,
-    });
-  };
-
   const handleLoadMore = async () => {
-    await this.fetchData(this.state.lastSearchQuery);
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+    try {
+      setPage(page + 1);
+      await fetchData(lastSearchQuery, page + 1);
+    } catch (error) {
+      console.error('Error loading more data:', error);
+    }
   };
 
-
-    return (
-      <>
-        <Searchbar onSubmit={handleSubmit} />
-        {isLoading ? (
-          <Loader />
-        ) : (
-          <ImageGallery>
-            {results &&
-              results.map(result => (
-                <ImageGalleryItem
-                  onClick={() => toggleModal(result.largeImageURL)}
-                  key={result.id}
-                  src={result.webformatURL}
-                  description={result.description}
-                />
-              ))}
-          </ImageGallery>
-        )}
-        {showLoadMore && (
-          <Button
-            nextPage={handleLoadMore}
-            className={'load-more'}
-            type="button"
-            label="Load more"
-          />
-        )}
-        {isModalOpen && <Modal imageURL={selectedImage} />}
-      </>
-    );
-}
+  return (
+    <>
+      <Searchbar onSubmit={handleSubmit} />
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <ImageGallery>
+          {results &&
+            results.map(result => (
+              <ImageGalleryItem
+                onClick={() => toggleModal(result.largeImageURL)}
+                key={result.id}
+                src={result.webformatURL}
+                description={result.description}
+              />
+            ))}
+        </ImageGallery>
+      )}
+      {showLoadMore && (
+        <Button
+          nextPage={handleLoadMore}
+          className={'load-more'}
+          type="button"
+          label="Load more"
+        />
+      )}
+      {isModalOpen && <Modal imageURL={selectedImage} />}
+    </>
+  );
+};
 
 export default App;
