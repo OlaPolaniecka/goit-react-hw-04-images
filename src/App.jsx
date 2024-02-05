@@ -55,10 +55,9 @@ const App = () => {
             per_page: 12,
           },
         });
-
+        setIsLoading(false);
         setResults(prevResults => [...prevResults, ...response.data.hits]);
         setTotal(Math.ceil(response.data.totalHits / 12));
-        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
