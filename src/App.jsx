@@ -67,24 +67,14 @@ const App = () => {
       }
     };
     fetchData();
-  }, [isLoading, page, results]);
+  }, [isLoading, page, results, lastSearchQuery]);
 
   const handleSubmit = async query => {
-    try {
-      const data = await fetchData(query);
-      setLastSearchQuery({ lastSearchQuery: query, results: data });
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
+    setLastSearchQuery({ lastSearchQuery: query });
   };
 
   const handleLoadMore = async () => {
-    try {
-      setPage(page + 1);
-      await fetchData(lastSearchQuery, page + 1);
-    } catch (error) {
-      console.error('Error loading more data:', error);
-    }
+    setPage(page + 1);
   };
 
   return (
