@@ -42,12 +42,12 @@ const App = () => {
   }, [isModalOpen, toggleModal, total]);
 
   useEffect(() => {
-    const fetchData = async query => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
         const response = await axios.get('https://pixabay.com/api/', {
           params: {
-            q: query,
+            q: lastSearchQuery,
             page: page,
             key: API_KEY,
             image_type: 'photo',
@@ -68,6 +68,7 @@ const App = () => {
 
   const handleSubmit = async query => {
     setLastSearchQuery(query);
+    setResults([]);
   };
 
   const handleLoadMore = async () => {
