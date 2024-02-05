@@ -42,13 +42,12 @@ const App = () => {
   }, [isModalOpen, toggleModal, total]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async query => {
       try {
-        setIsLoading(true);
-
+        setIsLoading({ isLoading: true });
         const response = await axios.get('https://pixabay.com/api/', {
           params: {
-            q: lastSearchQuery,
+            q: query,
             page: page,
             key: API_KEY,
             image_type: 'photo',
@@ -56,18 +55,19 @@ const App = () => {
             per_page: 12,
           },
         });
-
-        setResults(prevResults => [...prevResults, ...response.data.hits]);
-        setTotal(Math.ceil(response.data.totalHits / 12));
-
-        setIsLoading(false);
+        setIsLoading(isLoading);
+        setResults({ results: [...response.data.hits, ...results] });
+        setTotal({
+          total: Math.ceil(
+            response.data.totalHits / response.config.params.per_page
+          ),
+        });
       } catch (error) {
         console.error('Error fetching data:', error);
-        setIsLoading(false);
       }
     };
-
     fetchData();
+    //eslint-disable-next-line
   }, [page, lastSearchQuery]);
 
   const handleSubmit = async query => {
