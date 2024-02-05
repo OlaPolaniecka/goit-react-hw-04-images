@@ -5,7 +5,7 @@ import ImageGallery from 'components/ImageGallery';
 import ImageGalleryItem from 'components/ImageGalleryItem';
 import Loader from 'components/Loader';
 import Modal from 'components/Modal';
-import { useState, useEffect, useToggleModal } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const App = () => {
   const [results, setResults] = useState([]);
@@ -19,7 +19,7 @@ const App = () => {
 
   const API_KEY = '41147953-e12c65c5a5e41658f9ab5f6ec';
 
-  const toggleModal = useToggleModal(
+  const toggleModal = useCallback(
     image => {
       setSelectedImage(image);
       setIsModalOpen(!isModalOpen);
@@ -44,7 +44,7 @@ const App = () => {
   useEffect(() => {
     const fetchData = async query => {
       try {
-        setIsLoading({ isLoading: true });
+        setIsLoading(true);
         const response = await axios.get('https://pixabay.com/api/', {
           params: {
             q: query,
@@ -55,15 +55,13 @@ const App = () => {
             per_page: 12,
           },
         });
-        setIsLoading(isLoading);
-        setResults({ results: [...response.data.hits, ...results] });
-        setTotal({
-          total: Math.ceil(
-            response.data.totalHits / response.config.params.per_page
-          ),
-        });
+
+        setResults(prevResults => [...prevResults, ...response.data.hits]);
+        setTotal(Math.ceil(response.data.totalHits / 12));
+        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setIsLoading(false);
       }
     };
     fetchData();
