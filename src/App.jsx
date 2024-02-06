@@ -69,6 +69,7 @@ const App = () => {
   const handleSubmit = async query => {
     setLastSearchQuery(query);
     setResults([]);
+    setPage(1);
   };
 
   const handleLoadMore = async () => {
